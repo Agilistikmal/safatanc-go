@@ -13,7 +13,7 @@ type ProjectService interface {
 	Update(projectId int, project *model.ProjectRequest) (model.ProjectResponse, error)
 	Delete(projectId int) error
 	FindById(projectId int) (model.ProjectResponse, error)
-	FindAll() []model.ProjectResponse
+	FindAll(page int, limit int) ([]model.ProjectResponse, int)
 }
 
 type ProjectServiceImpl struct {
@@ -80,12 +80,17 @@ func (service *ProjectServiceImpl) FindById(projectId int) (model.ProjectRespons
 	return helper.ProjectToProjectResponse(project), nil
 }
 
-func (service *ProjectServiceImpl) FindAll() []model.ProjectResponse {
+func (service *ProjectServiceImpl) FindAll(page int, limit int) ([]model.ProjectResponse, int) {
 	var projects []model.Project
 	var responses []model.ProjectResponse
-	database.DB.Find(&projects)
+	var count int64
+
+	offset := (page - 1) * limit
+	database.DB.Offset(offset).Limit(limit).Find(&projects)
+	database.DB.Table("projects").Count(&count)
+	totalPage := (int(count) / limit) + 1
 	for _, project := range projects {
 		responses = append(responses, helper.ProjectToProjectResponse(project))
 	}
-	return responses
+	return responses, totalPage
 }

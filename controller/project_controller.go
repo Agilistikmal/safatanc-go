@@ -100,10 +100,25 @@ func (controller *ProjectControllerImpl) FindById(ctx *fiber.Ctx) error {
 }
 
 func (controller *ProjectControllerImpl) FindAll(ctx *fiber.Ctx) error {
-	result := controller.ProjectService.FindAll()
-	return ctx.JSON(model.Response{
+	queries := ctx.Queries()
+	page, _ := strconv.Atoi(queries["page"])
+	limit, _ := strconv.Atoi(queries["limit"])
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 10 {
+		limit = 10
+	} else if limit > 100 {
+		limit = 100
+	}
+
+	result, totalPage := controller.ProjectService.FindAll(page, limit)
+	return ctx.JSON(model.Responses{
 		StatusCode:    http.StatusOK,
 		StatusMessage: http.StatusText(http.StatusOK),
 		Data:          result,
+		Page:          page,
+		Limit:         limit,
+		TotalPage:     totalPage,
 	})
 }
